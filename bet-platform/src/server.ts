@@ -1,8 +1,7 @@
 import fastify from "fastify";
-
 import routes from "./routes";
-import { errorHandler } from "./errorHandler";
-import "./scheduler";
+import { errorHandler } from "./helpers/errorHandler";
+import "./helpers/scheduler";
 
 const server = fastify({
   logger: true,

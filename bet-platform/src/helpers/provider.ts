@@ -18,15 +18,3 @@ export async function getEventsFromProvider(): Promise<Event[]> {
     throw error;
   }
 }
-
-// export async function updateEventStatus(
-//   eventId: string,
-//   status: "first_team_won" | "second_team_won"
-// ): Promise<void> {
-//   try {
-//     await axios.put(`${providerUrl}/events/${eventId}`, { status });
-//   } catch (error) {
-//     console.error("Error updating event status:", error);
-//     throw error;
-//   }
-// }

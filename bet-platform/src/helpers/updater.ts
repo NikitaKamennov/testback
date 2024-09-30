@@ -27,7 +27,7 @@ export async function updateEventStatuses() {
       await updateBetStatuses(event.id, event.status);
     }
 
-    console.log("Event statuses updated successfully");
+    console.log("Эвенты и статусы обновлены успешно");
   } catch (error) {
     console.error("Error updating event statuses:", error);
   }
