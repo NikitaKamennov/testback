@@ -33,28 +33,6 @@ export async function updateEventStatuses() {
   }
 }
 
-// export async function updateBetStatuses(
-//   eventId: string,
-//   eventStatus: "pending" | "first_team_won" | "second_team_won"
-// ) {
-//   const bets = await prisma.bet.findMany({
-//     where: { eventId, status: "pending" },
-//   });
-
-//   for (const bet of bets) {
-//     let newStatus: "won" | "lost" = "lost";
-
-//     if (eventStatus === "first_team_won") {
-//       newStatus = "won";
-//     }
-
-//     await prisma.bet.update({
-//       where: { id: bet.id },
-//       data: { status: newStatus },
-//     });
-//   }
-// }
-
 export async function updateBetStatuses(
   eventId: string,
   eventStatus: "pending" | "first_team_won" | "second_team_won"
@@ -74,7 +52,6 @@ export async function updateBetStatuses(
         newStatus = "lost";
         break;
       default:
-        // Если статус остается pending, оставляем его без изменений
         newStatus = bet.status;
     }
 

@@ -2,7 +2,6 @@ import fastify from "fastify";
 
 import routes from "./routes";
 import { errorHandler } from "./errorHandler";
-import { syncRoutes } from "./syncRoutes";
 import "./scheduler";
 
 const server = fastify({
@@ -10,7 +9,6 @@ const server = fastify({
 });
 
 server.register(routes);
-// server.register(syncRoutes);
 errorHandler(server);
 
 const start = async () => {
@@ -22,8 +20,6 @@ const start = async () => {
     } else {
       console.log("Server running, but unable to determine port");
     }
-    // Вызываем синхронизацию при запуске сервера
-    // await server.inject("/sync");
   } catch (err) {
     server.log.error(err);
     process.exit(1);

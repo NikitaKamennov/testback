@@ -1,16 +1,12 @@
-import { Event } from "./../../provider-service/src/events/event.model";
 import { FastifyInstance } from "fastify";
 import { EventStatus, PrismaClient } from "@prisma/client";
-import { getEventsFromProvider, syncEvent } from "./syncData";
-import timers from "timers";
-import { updateBetStatuses } from "./eventUpdater";
-import ts from "typescript";
+import { updateBetStatuses } from "./updater";
 
 interface EventStatusUpdateRequest {
   eventId: string;
   coefficient: number;
   deadline: number;
-  status: string;
+  status: "pending" | "first_team_won" | "second_team_won";
 }
 
 const prisma = new PrismaClient();
@@ -48,7 +44,9 @@ export default async function routes(fastify: FastifyInstance) {
 
     // Валидация
     if (!eventId || !amount || amount <= 0) {
-      return reply.code(400).send({ error: "Не та ставка или нет уже эвента" });
+      return reply
+        .code(400)
+        .send({ error: "ставка меньше 0 или нет уже эвента" });
     }
 
     const event = await prisma.event.findUnique({
@@ -62,7 +60,7 @@ export default async function routes(fastify: FastifyInstance) {
       event.status !== "pending"
     ) {
       return reply.code(400).send({
-        error: "Событие не найдено либо ставка сыграла уже",
+        error: "Событие не найдено либо ставка просрочена",
       });
     }
 
@@ -83,15 +81,13 @@ export default async function routes(fastify: FastifyInstance) {
     return bets;
   });
 
-  ////////////////////////////////////////// прием изменений от провайдер сервиса /////////////////////////////////
+  ///////// прием изменений от провайдер сервиса новый эвент или изменение статуса эвента/////////////////////////////////
 
   fastify.post("/events/status-update", async (request, reply) => {
     const { eventId, coefficient, deadline, status } =
       request.body as EventStatusUpdateRequest;
 
     try {
-      //@ts-ignore
-      const bet = await updateBetStatuses(eventId, status);
       const event = await prisma.event.findUnique({
         where: { id: eventId },
         select: { id: true, status: true },
@@ -121,6 +117,8 @@ export default async function routes(fastify: FastifyInstance) {
           },
         });
 
+        const bet = await updateBetStatuses(eventId, status);
+
         return bet;
       }
     } catch (error) {
@@ -129,34 +127,5 @@ export default async function routes(fastify: FastifyInstance) {
     }
   });
 
-  //////////////////////////////////////////////синхрон с провайдером/////////////////////
-
-  let timer: NodeJS.Timeout;
-
-  // fastify.get("/events/updateAll", async (_, reply) => {
-  //   try {
-  //     const providerEvents = await getEventsFromProvider();
-
-  //     for (const event of providerEvents) {
-  //       await syncEvent(event);
-  //     }
-
-  //     reply.send({ message: "Обновление прошло успешно" });
-  //   } catch (error) {
-  //     console.error("Error syncing events:", error);
-  //     reply.code(500).send({ error: "Internal Server Error" });
-  //   }
-  // });
-
-  // // Запускаем синхронизацию при запуске сервера
-  // timer = timers.setInterval(() => {
-  //   // @ts-ignore
-  //   fastify.inject("/events/updateAll", { method: "GET" });
-  // }, 1500000); // 15 секунд
-
-  return () => {
-    timers.clearInterval(timer);
-  };
+  return;
 }
-
-//////////////////////////////////////////////////////////////////////////////
