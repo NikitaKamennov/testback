@@ -2,13 +2,26 @@ import { Event, CreateEvent, UpdateEventStatus } from "./event.model";
 import axios from "axios";
 class EventService {
   private events: Map<string, Event> = new Map();
-  // private readonly BET_PLATFORM_URL = "http://bet-platform:3001"; // Предполагаем, что bet-platform работает на порту 3001
 
   getAllEvents(): Event[] {
     return Array.from(this.events.values());
   }
 
   createEvent(eventData: CreateEvent): Event {
+    console.log(
+      "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      eventData.coefficient.toString().split(".")[1]
+    );
+    if (
+      eventData.coefficient <= 0 ||
+      typeof eventData.coefficient !== "number" ||
+      eventData.coefficient.toString().split(".")[1]?.length > 2
+    ) {
+      throw new Error(
+        "Коэффициент ставки на победу  должен быть положительным числом с двумя знаками после запятой"
+      );
+    }
+
     const id = Date.now().toString();
     const event: Event = {
       ...eventData,
@@ -18,14 +31,18 @@ class EventService {
     this.events.set(id, event);
     return event;
   }
-
+  //////////////////////////////////////////////////// оповещаем бэт платформу ///////////////////////////////////////
   async notifyBetPlatform(
     eventId: string,
+    coefficient: Event["coefficient"],
+    deadline: Event["deadline"],
     status: UpdateEventStatus["status"]
   ) {
     try {
       await axios.post(`http://localhost:3001/events/status-update`, {
         eventId,
+        coefficient,
+        deadline,
         status,
       });
       console.log(
@@ -35,7 +52,7 @@ class EventService {
       console.error(`Failed to notify bet-platform: ${error.message}`);
     }
   }
-
+  ////////////////////////////////////////////////обновляем статус события и извещаем бэт платформу ///////////////////////////////////////
   async updateEventStatus(
     id: string,
     status: UpdateEventStatus["status"]
@@ -47,9 +64,19 @@ class EventService {
     this.events.set(id, event);
 
     // Отправляем уведомление в bet-platform
-    await this.notifyBetPlatform(id, status);
+    await this.notifyBetPlatform(id, event.coefficient, event.deadline, status);
 
     return event;
+  }
+
+  ////////////////////////////////////////всё на бэт платформу /////////////////////////////////////////
+  getAllEventsFromProvider(): Event[] {
+    return Array.from(this.events.values()).map((event) => ({
+      id: event.id,
+      coefficient: event.coefficient,
+      deadline: event.deadline,
+      status: event.status,
+    }));
   }
 }
 

@@ -10,3 +10,8 @@ export type CreateEvent = Omit<Event, "id" | "status">;
 export type UpdateEventStatus = {
   status: Event["status"];
 };
+
+export interface EventStatusUpdateRequest {
+  eventId: string;
+  status: string;
+}

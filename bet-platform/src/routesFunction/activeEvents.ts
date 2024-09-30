@@ -13,7 +13,20 @@ export async function activeEvents(): Promise<any[]> {
       },
     });
 
-    return events.map((event) => ({
+    // Получаем все идентификаторы событий из таблицы bet
+    const betEventIds = await prisma.bet.findMany({
+      select: {
+        eventId: true,
+      },
+    });
+
+    // Фильтруем события, которые еще можно поставить
+    const activeEvents = events.filter(
+      (event) =>
+        !betEventIds.some((betEventId) => betEventId.eventId === event.id)
+    );
+
+    return activeEvents.map((event) => ({
       ...event,
       deadline: Number(event.deadline),
     }));
