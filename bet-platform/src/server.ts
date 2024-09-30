@@ -1,0 +1,33 @@
+import fastify from "fastify";
+
+import routes from "./routes";
+import { errorHandler } from "./errorHandler";
+import { syncRoutes } from "./syncRoutes";
+import "./scheduler";
+
+const server = fastify({
+  logger: true,
+});
+
+server.register(routes);
+// server.register(syncRoutes);
+errorHandler(server);
+
+const start = async () => {
+  try {
+    await server.listen({ port: 3001 });
+    const address = server.server?.address();
+    if (typeof address === "object" && address !== null) {
+      console.log(`Server running on ${address.port}`);
+    } else {
+      console.log("Server running, but unable to determine port");
+    }
+    // Вызываем синхронизацию при запуске сервера
+    // await server.inject("/sync");
+  } catch (err) {
+    server.log.error(err);
+    process.exit(1);
+  }
+};
+
+start();

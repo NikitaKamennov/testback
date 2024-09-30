@@ -1,0 +1,116 @@
+import { Event } from "./../../provider-service/src/events/event.model";
+import { FastifyInstance } from "fastify";
+import { PrismaClient } from "@prisma/client";
+import { getEventsFromProvider, syncEvent } from "./syncData";
+import timers from "timers";
+
+const prisma = new PrismaClient();
+
+export default async function routes(fastify: FastifyInstance) {
+  // fastify.get("/events", async (_, reply) => {
+  //   const events = await prisma.event.findMany({
+  //     where: {
+  //       deadline: {
+  //         gt: BigInt(Date.now()),
+  //       },
+  //       status: "pending",
+  //     },
+  //   });
+  //   return events;
+  // });
+
+  fastify.get("/events", async (_, reply) => {
+    try {
+      const events = await prisma.event.findMany({
+        where: {
+          deadline: {
+            gt: BigInt(Date.now()),
+          },
+          status: "pending",
+        },
+      });
+      const formattedEvents = events.map((event) => ({
+        ...event,
+        deadline: Number(event.deadline),
+      }));
+
+      reply.send(formattedEvents);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      reply.code(500).send({ error: "Internal Server Error" });
+    }
+  });
+
+  fastify.post("/bets", async (request, reply) => {
+    const { eventId, amount } = request.body as {
+      eventId: string;
+      amount: number;
+    };
+
+    // Валидация
+    if (!eventId || !amount || amount <= 0) {
+      return reply.code(400).send({ error: "Не та ставка или нет уже эвента" });
+    }
+
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { coefficient: true, deadline: true, status: true },
+    });
+
+    if (
+      !event ||
+      event.deadline <= BigInt(Date.now()) ||
+      event.status !== "pending"
+    ) {
+      return reply.code(400).send({
+        error: "Событие не найдено либо ставка сыграла уже",
+      });
+    }
+
+    const bet = await prisma.bet.create({
+      data: {
+        eventId,
+        amount,
+        potentialWin: amount * event.coefficient,
+        status: "pending",
+      },
+    });
+
+    return reply.send(bet);
+  });
+
+  fastify.get("/bets", async (_, reply) => {
+    const bets = await prisma.bet.findMany({
+      // include: { event: true },
+    });
+    return bets;
+  });
+  //////////////////////////////////////////////синхрон с провайдером/////////////////////
+
+  let timer: NodeJS.Timeout;
+
+  fastify.get("/events/updateAll", async (_, reply) => {
+    try {
+      const providerEvents = await getEventsFromProvider();
+
+      for (const event of providerEvents) {
+        await syncEvent(event);
+      }
+
+      reply.send({ message: "Events synced successfully" });
+    } catch (error) {
+      console.error("Error syncing events:", error);
+      reply.code(500).send({ error: "Internal Server Error" });
+    }
+  });
+
+  // Запускаем синхронизацию при запуске сервера
+  timer = timers.setInterval(() => {
+    // @ts-ignore
+    fastify.inject("/events/updateAll", { method: "GET" });
+  }, 150000); // 15 секунд
+
+  return () => {
+    timers.clearInterval(timer);
+  };
+}
