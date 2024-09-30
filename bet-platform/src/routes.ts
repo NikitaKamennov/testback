@@ -1,23 +1,22 @@
 import { Event } from "./../../provider-service/src/events/event.model";
 import { FastifyInstance } from "fastify";
-import { PrismaClient } from "@prisma/client";
+import { EventStatus, PrismaClient } from "@prisma/client";
 import { getEventsFromProvider, syncEvent } from "./syncData";
 import timers from "timers";
+import { updateBetStatuses } from "./eventUpdater";
+import ts from "typescript";
+
+interface EventStatusUpdateRequest {
+  eventId: string;
+  coefficient: number;
+  deadline: number;
+  status: string;
+}
 
 const prisma = new PrismaClient();
 
 export default async function routes(fastify: FastifyInstance) {
-  // fastify.get("/events", async (_, reply) => {
-  //   const events = await prisma.event.findMany({
-  //     where: {
-  //       deadline: {
-  //         gt: BigInt(Date.now()),
-  //       },
-  //       status: "pending",
-  //     },
-  //   });
-  //   return events;
-  // });
+  routes;
 
   fastify.get("/events", async (_, reply) => {
     try {
@@ -80,37 +79,84 @@ export default async function routes(fastify: FastifyInstance) {
   });
 
   fastify.get("/bets", async (_, reply) => {
-    const bets = await prisma.bet.findMany({
-      // include: { event: true },
-    });
+    const bets = await prisma.bet.findMany({});
     return bets;
   });
-  //////////////////////////////////////////////синхрон с провайдером/////////////////////
 
-  let timer: NodeJS.Timeout;
+  ////////////////////////////////////////// прием изменений от провайдер сервиса /////////////////////////////////
 
-  fastify.get("/events/updateAll", async (_, reply) => {
+  fastify.post("/events/status-update", async (request, reply) => {
+    const { eventId, coefficient, deadline, status } =
+      request.body as EventStatusUpdateRequest;
+
     try {
-      const providerEvents = await getEventsFromProvider();
+      //@ts-ignore
+      const bet = await updateBetStatuses(eventId, status);
+      const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: { id: true, status: true },
+      });
 
-      for (const event of providerEvents) {
-        await syncEvent(event);
+      if (!event) {
+        // Если событие не найдено, создаем новое
+        const newEvent = await prisma.event.create({
+          data: {
+            id: eventId,
+            coefficient,
+            deadline: BigInt(deadline),
+            status: status as EventStatus,
+          },
+        });
+
+        return;
+      } else {
+        await updateBetStatuses(event.id, event.status);
+        // Обновляем существующее событие
+        const updatedEvent = await prisma.event.update({
+          where: { id: eventId },
+          data: {
+            coefficient,
+            deadline: BigInt(deadline),
+            status: status as EventStatus,
+          },
+        });
+
+        return bet;
       }
-
-      reply.send({ message: "Events synced successfully" });
     } catch (error) {
-      console.error("Error syncing events:", error);
+      console.error("Error updating event status:", error);
       reply.code(500).send({ error: "Internal Server Error" });
     }
   });
 
-  // Запускаем синхронизацию при запуске сервера
-  timer = timers.setInterval(() => {
-    // @ts-ignore
-    fastify.inject("/events/updateAll", { method: "GET" });
-  }, 150000); // 15 секунд
+  //////////////////////////////////////////////синхрон с провайдером/////////////////////
+
+  let timer: NodeJS.Timeout;
+
+  // fastify.get("/events/updateAll", async (_, reply) => {
+  //   try {
+  //     const providerEvents = await getEventsFromProvider();
+
+  //     for (const event of providerEvents) {
+  //       await syncEvent(event);
+  //     }
+
+  //     reply.send({ message: "Обновление прошло успешно" });
+  //   } catch (error) {
+  //     console.error("Error syncing events:", error);
+  //     reply.code(500).send({ error: "Internal Server Error" });
+  //   }
+  // });
+
+  // // Запускаем синхронизацию при запуске сервера
+  // timer = timers.setInterval(() => {
+  //   // @ts-ignore
+  //   fastify.inject("/events/updateAll", { method: "GET" });
+  // }, 1500000); // 15 секунд
 
   return () => {
     timers.clearInterval(timer);
   };
 }
+
+//////////////////////////////////////////////////////////////////////////////
