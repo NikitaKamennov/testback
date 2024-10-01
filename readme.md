@@ -47,7 +47,7 @@ API сервиса provider-service
    "status": "pending"
    }```
 
-   ````
+
 
 3. PUT http://localhost:3000/events/:id Обновляет статус существующего события.
 
