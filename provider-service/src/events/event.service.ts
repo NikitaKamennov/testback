@@ -8,10 +8,6 @@ class EventService {
   }
 
   createEvent(eventData: CreateEvent): Event {
-    console.log(
-      "ffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-      eventData.coefficient.toString().split(".")[1]
-    );
     if (
       eventData.coefficient <= 0 ||
       typeof eventData.coefficient !== "number" ||

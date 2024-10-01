@@ -3,19 +3,11 @@ import { PrismaClient } from "@prisma/client";
 import { eventStatusUpdate } from "./routesFunction/eventStatusUpdate";
 import { createBet } from "./routesFunction/createBet";
 import { activeEvents } from "./routesFunction/activeEvents";
-
-interface EventStatusUpdateRequest {
-  eventId: string;
-  coefficient: number;
-  deadline: number;
-  status: "pending" | "first_team_won" | "second_team_won";
-}
+import { EventStatusUpdateRequest } from "./types/types";
 
 const prisma = new PrismaClient();
 
 export default async function routes(fastify: FastifyInstance) {
-  // routes;
-
   fastify.get("/events", async (_, reply) => {
     try {
       const events = await activeEvents();
@@ -35,8 +27,14 @@ export default async function routes(fastify: FastifyInstance) {
     try {
       const bet = await createBet(eventId, amount);
       return reply.send(bet);
-    } catch (error) {
-      reply.code(400).send({ error });
+    } catch (error: unknown) {
+      console.error("Error creating bet:", error);
+      reply.code(400).send({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Произошла неизвестная ошибка",
+      });
     }
   });
 

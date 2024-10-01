@@ -1,6 +1,5 @@
-// src/routes/bets.ts
-
 import { PrismaClient } from "@prisma/client";
+import { ErrorMessage } from "../types/types";
 
 const prisma = new PrismaClient();
 
@@ -28,7 +27,7 @@ export async function createBet(eventId: string, amount: number): Promise<any> {
     if (
       amount <= 0 ||
       typeof amount !== "number" ||
-      amount.toString().split(".")[1]?.length !== 2
+      amount.toString().split(".")[1]?.length > 2
     ) {
       throw new Error(
         "Сумма ставки должна быть положительным числом с двумя знаками после запятой"
@@ -58,8 +57,8 @@ export async function createBet(eventId: string, amount: number): Promise<any> {
     });
 
     return bet;
-  } catch (error) {
-    console.error("Error creating bet:", error);
-    throw new Error("Ошибка при создании ставки");
+  } catch (error: ErrorMessage | any) {
+    console.error("Ошибка создания ставки:", error.message);
+    throw new Error(error.message);
   }
 }
