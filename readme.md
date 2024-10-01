@@ -16,7 +16,8 @@ API сервиса provider-service
 
    пример тела запроса
 
-   ```{
+   ```
+   {
    "coefficient": 1.27,
    "deadline": 1900003333000
    }```
@@ -27,14 +28,16 @@ API сервиса provider-service
    "deadline": 1900003333000,
    "id": "1727749845060",
    "status": "pending"
-   }```
+   }
+   ```
 
 
 
 2. GET http://localhost:3000/events Возвращает список всех событий с полной информацией.
    Пример ответа
 
-   ```{
+   ```
+   {
    "coefficient": 1.27,
    "deadline": 1900003333000,
    "id": "1727749845060",
@@ -45,7 +48,8 @@ API сервиса provider-service
    "deadline": 1900003333000,
    "id": "1727749854777",
    "status": "pending"
-   }```
+   }
+   ```
 
 
 
@@ -53,18 +57,22 @@ API сервиса provider-service
 
 тело запроса
 
-```{
+```
+{
 "status": "first_team_won"
-}```
+}
+```
 
 пример ответа
 
-```{
+```
+{
 "coefficient": 1.27,
 "deadline": 1900003333000,
 "id": "1727758615287",
 "status": "first_team_won"
-}```
+}
+```
 
 API сервиса bet-platform:
 
@@ -72,7 +80,8 @@ API сервиса bet-platform:
 
 пример ответа
 
-```{
+```
+{
 "id": "1727749737436",
 "coefficient": 1.22,
 "deadline": 1900003333000,
@@ -83,30 +92,36 @@ API сервиса bet-platform:
 "coefficient": 1.27,
 "deadline": 1900003333000,
 "status": "pending"
-}```
+}
+```
 
 2. POST http://localhost:3001/bets сделать ставку на событие
 
 пример запроса
 
-```{"eventId": "1727749845060",
-"amount": 100.33 }```
+```
+{"eventId": "1727749845060",
+"amount": 100.33 }
+```
 
 пример ответа
 
-```{
+```
+{
 "id": "cm1pz90aw000111wx2tflx7nf",
 "eventId": "1727759244846",
 "amount": 100.33,
 "potentialWin": 127.4191,
 "status": "pending"
-}```
+}
+```
 
 3. GET http://localhost:3001/bets возвращает историю всех сделанных ставок и их статусы на данный момент
 
 Пример ответа
 
-```{
+```
+{
 "id": "cm1p5cips0001zf7d8910esqi",
 "eventId": "1727708976159",
 "amount": 111,
@@ -119,7 +134,8 @@ API сервиса bet-platform:
 "amount": 123,
 "potentialWin": 177.12,
 "status": "pending"
-}```
+}
+```
 
 
 
