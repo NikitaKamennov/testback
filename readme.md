@@ -16,7 +16,7 @@ API сервиса provider-service
 
    пример тела запроса
 
-   ````{
+   ```{
    "coefficient": 1.27,
    "deadline": 1900003333000
    }```
@@ -29,12 +29,12 @@ API сервиса provider-service
    "status": "pending"
    }```
 
-   ````
+
 
 2. GET http://localhost:3000/events Возвращает список всех событий с полной информацией.
    Пример ответа
 
-   ````{
+   ```{
    "coefficient": 1.27,
    "deadline": 1900003333000,
    "id": "1727749845060",
@@ -53,7 +53,7 @@ API сервиса provider-service
 
 тело запроса
 
-````{
+```{
 "status": "first_team_won"
 }```
 
@@ -120,4 +120,6 @@ API сервиса bet-platform:
 "potentialWin": 177.12,
 "status": "pending"
 }```
-````
+
+
+
